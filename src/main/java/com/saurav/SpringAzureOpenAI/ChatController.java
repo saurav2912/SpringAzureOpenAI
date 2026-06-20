@@ -22,6 +22,6 @@ public class ChatController {
     public ResponseEntity<String> getAnswer(@RequestBody String prompt) throws IOException {
         String sessionId = (String) session.getAttribute("sessionId");
         String response = azureAIService.getAnswer(prompt,sessionId);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(response);  
     }
 }
