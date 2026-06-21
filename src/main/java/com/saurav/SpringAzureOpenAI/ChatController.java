@@ -32,8 +32,19 @@ public class ChatController {
 
     @PostMapping("/generateImage")
     public ResponseEntity<String> generateImgage(@RequestBody String prompt, @RequestHeader String name) throws IOException {
-        //String sessionId = (String) session.getAttribute("sessionId");
         azureAIService.generateImage(prompt,name);
         return ResponseEntity.ok("Image generated");
+    }
+
+    @PostMapping("/embedText")
+    public ResponseEntity<float[]> embed(@RequestHeader String text) {
+        float[] response  = azureAIService.getEmbedding(text);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/findSimilarity")
+    public ResponseEntity<Double> findSimilarity(@RequestHeader String text) {
+        double response  = azureAIService.findSimilarity(text);
+        return ResponseEntity.ok(response);
     }
 }
