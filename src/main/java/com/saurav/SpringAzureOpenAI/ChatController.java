@@ -47,4 +47,10 @@ public class ChatController {
         double response  = azureAIService.findSimilarity(text);
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/findPlagiarism")
+    public ResponseEntity<Double> findPlagiarism(@RequestHeader String docName) throws IOException {
+        double response  = azureAIService.findPlagiarism(docName);
+        return ResponseEntity.ok(response);
+    }
 }

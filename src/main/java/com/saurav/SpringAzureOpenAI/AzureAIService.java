@@ -4,6 +4,7 @@ import com.openai.models.images.ImagesResponse;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.embedding.Embedding;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.embedding.EmbeddingOptions;
 import org.springframework.ai.embedding.EmbeddingRequest;
@@ -22,6 +23,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.List;
 
 @Service
 public class AzureAIService {
@@ -113,5 +115,17 @@ public class AzureAIService {
         }
 
         return dot/(Math.sqrt(mod1)*Math.sqrt(mod2));
+    }
+
+    public double findPlagiarism(String docName) throws IOException {
+        String doc = Files.readString(Paths.get(new ClassPathResource(docName+".txt").getURI()));
+        String plagiarism = Files.readString(Paths.get(new ClassPathResource("PlagiarismText.txt").getURI()));
+        EmbeddingOptions options = EmbeddingOptions.builder().model("sauravazembedding").build();
+        EmbeddingRequest request = new EmbeddingRequest(Arrays.asList(doc,plagiarism),options);
+        List<Embedding> list = embeddingModel.call(request).getResults();
+        System.out.println(list.size());
+        float[] f1 = list.get(0).getOutput();
+        float[] f2 = list.get(1).getOutput();
+        return CosSimilarity(f1,f2)*100;
     }
 }
