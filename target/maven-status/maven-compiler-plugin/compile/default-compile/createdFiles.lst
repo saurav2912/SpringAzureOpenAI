@@ -1,3 +1,4 @@
 com\saurav\SpringAzureOpenAI\ChatController.class
 com\saurav\SpringAzureOpenAI\SpringAzureOpenAiApplication.class
+com\saurav\SpringAzureOpenAI\AppFilter.class
 com\saurav\SpringAzureOpenAI\AzureAIService.class

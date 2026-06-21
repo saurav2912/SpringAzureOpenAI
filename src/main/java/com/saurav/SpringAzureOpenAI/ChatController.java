@@ -3,9 +3,7 @@ package com.saurav.SpringAzureOpenAI;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 
@@ -22,6 +20,20 @@ public class ChatController {
     public ResponseEntity<String> getAnswer(@RequestBody String prompt) throws IOException {
         String sessionId = (String) session.getAttribute("sessionId");
         String response = azureAIService.getAnswer(prompt,sessionId);
-        return ResponseEntity.ok(response);  
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/classify")
+    public ResponseEntity<String> classify(@RequestHeader String topic) throws IOException {
+        String sessionId = (String) session.getAttribute("sessionId");
+        String response = azureAIService.classify(topic,sessionId);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/generateImage")
+    public ResponseEntity<String> generateImgage(@RequestBody String prompt, @RequestHeader String name) throws IOException {
+        //String sessionId = (String) session.getAttribute("sessionId");
+        azureAIService.generateImage(prompt,name);
+        return ResponseEntity.ok("Image generated");
     }
 }
