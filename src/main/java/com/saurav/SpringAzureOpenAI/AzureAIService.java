@@ -1,6 +1,10 @@
 package com.saurav.SpringAzureOpenAI;
 
+import com.openai.models.audio.speech.SpeechModel;
 import com.openai.models.images.ImagesResponse;
+import org.springframework.ai.audio.transcription.AudioTranscriptionOptions;
+import org.springframework.ai.audio.transcription.AudioTranscriptionPrompt;
+import org.springframework.ai.audio.transcription.TranscriptionModel;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
@@ -11,10 +15,13 @@ import org.springframework.ai.embedding.EmbeddingRequest;
 import org.springframework.ai.image.ImageModel;
 import org.springframework.ai.image.ImageOptions;
 import org.springframework.ai.image.ImagePrompt;
+import org.springframework.ai.openai.OpenAiAudioTranscriptionOptions;
 import org.springframework.ai.openai.OpenAiImageOptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -24,15 +31,19 @@ import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class AzureAIService {
 
     @Autowired
-    public ImageModel imageModel;
+    private ImageModel imageModel;
 
     @Autowired
-    public EmbeddingModel embeddingModel;
+    private EmbeddingModel embeddingModel;
+
+    @Autowired
+    private TranscriptionModel transcriptionModel;
 
     private ChatClient chatClient;
 
@@ -127,5 +138,44 @@ public class AzureAIService {
         float[] f1 = list.get(0).getOutput();
         float[] f2 = list.get(1).getOutput();
         return CosSimilarity(f1,f2)*100;
+    }
+
+    public String convertToText(MultipartFile file) throws IOException {
+        Path path = Paths.get("C:\\Users\\saura\\OneDrive\\Desktop\\imgAnalyzer\\").resolve(file.getOriginalFilename());
+        Files.write(path, file.getBytes(), StandardOpenOption.CREATE);
+        AudioTranscriptionOptions options = OpenAiAudioTranscriptionOptions.builder()
+                .azure(true)
+                .model("sauravazstt")
+                .build();
+        AudioTranscriptionPrompt prompt = new AudioTranscriptionPrompt(new FileSystemResource(path.toString()),options);
+        return transcriptionModel.call(prompt).getResult().getOutput();
+    }
+
+    public String translate(MultipartFile file) throws IOException {
+        Path path = Paths.get("C:\\Users\\saura\\OneDrive\\Desktop\\imgAnalyzer\\").resolve(file.getOriginalFilename());
+        Files.write(path, file.getBytes(), StandardOpenOption.CREATE);
+        AudioTranscriptionOptions options = OpenAiAudioTranscriptionOptions.builder()
+                .azure(true)
+                .model("sauravazstt")
+                .build();
+        AudioTranscriptionPrompt prompt = new AudioTranscriptionPrompt(new FileSystemResource(path.toString()),options);
+        String actualText = transcriptionModel.call(prompt).getResult().getOutput();
+        return chatClient.prompt("Translate the below text to English: "+actualText)
+                .advisors(x->x.param(ChatMemory.CONVERSATION_ID, UUID.randomUUID()))
+                .call().chatResponse().getResult().getOutput().getText();
+    }
+
+    public String summerize(MultipartFile file) throws IOException {
+        Path path = Paths.get("C:\\Users\\saura\\OneDrive\\Desktop\\imgAnalyzer\\").resolve(file.getOriginalFilename());
+        Files.write(path, file.getBytes(), StandardOpenOption.CREATE);
+        AudioTranscriptionOptions options = OpenAiAudioTranscriptionOptions.builder()
+                .azure(true)
+                .model("sauravazstt")
+                .build();
+        AudioTranscriptionPrompt prompt = new AudioTranscriptionPrompt(new FileSystemResource(path.toString()),options);
+        String actualText = transcriptionModel.call(prompt).getResult().getOutput();
+        return chatClient.prompt("Summerize into 3 bullet points: "+actualText)
+                .advisors(x->x.param(ChatMemory.CONVERSATION_ID, UUID.randomUUID()))
+                .call().chatResponse().getResult().getOutput().getText();
     }
 }

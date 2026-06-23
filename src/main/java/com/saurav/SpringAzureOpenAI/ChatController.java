@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 
@@ -51,6 +52,24 @@ public class ChatController {
     @GetMapping("/findPlagiarism")
     public ResponseEntity<Double> findPlagiarism(@RequestHeader String docName) throws IOException {
         double response  = azureAIService.findPlagiarism(docName);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/transcribe")
+    public ResponseEntity<String> transcriptAudio(@RequestBody MultipartFile file) throws IOException {
+        String response = azureAIService.convertToText(file);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/translate")
+    public ResponseEntity<String> translateAudio(@RequestBody MultipartFile file) throws IOException {
+        String response = azureAIService.translate(file);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/summerize")
+    public ResponseEntity<String> summerizeAudio(@RequestBody MultipartFile file) throws IOException {
+        String response = azureAIService.summerize(file);
         return ResponseEntity.ok(response);
     }
 }
