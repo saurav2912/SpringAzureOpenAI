@@ -7,6 +7,7 @@ import org.springframework.ai.audio.transcription.AudioTranscriptionPrompt;
 import org.springframework.ai.audio.transcription.TranscriptionModel;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.embedding.Embedding;
 import org.springframework.ai.embedding.EmbeddingModel;
@@ -17,6 +18,7 @@ import org.springframework.ai.image.ImageOptions;
 import org.springframework.ai.image.ImagePrompt;
 import org.springframework.ai.openai.OpenAiAudioTranscriptionOptions;
 import org.springframework.ai.openai.OpenAiImageOptions;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
@@ -44,6 +46,9 @@ public class AzureAIService {
 
     @Autowired
     private TranscriptionModel transcriptionModel;
+
+    @Autowired
+    private VectorStore vectorStore;
 
     private ChatClient chatClient;
 
@@ -177,5 +182,26 @@ public class AzureAIService {
         return chatClient.prompt("Summerize into 3 bullet points: "+actualText)
                 .advisors(x->x.param(ChatMemory.CONVERSATION_ID, UUID.randomUUID()))
                 .call().chatResponse().getResult().getOutput().getText();
+    }
+
+    public String generateQuiz(MultipartFile file) throws IOException {
+        Path path = Paths.get("C:\\Users\\saura\\OneDrive\\Desktop\\imgAnalyzer\\").resolve(file.getOriginalFilename());
+        Files.write(path, file.getBytes(), StandardOpenOption.CREATE);
+        AudioTranscriptionOptions options = OpenAiAudioTranscriptionOptions.builder()
+                .azure(true)
+                .model("sauravazstt")
+                .build();
+        AudioTranscriptionPrompt prompt = new AudioTranscriptionPrompt(new FileSystemResource(path.toString()),options);
+        String actualText = transcriptionModel.call(prompt).getResult().getOutput();
+        return chatClient.prompt("Generate Quiz with MCQ and answers"+actualText)
+                .advisors(x->x.param(ChatMemory.CONVERSATION_ID, UUID.randomUUID()))
+                .call().chatResponse().getResult().getOutput().getText();
+    }
+
+    public String retrieveFromVector(String query) {
+        return chatClient.prompt(query)
+                .advisors(QuestionAnswerAdvisor.builder(vectorStore).build())
+                .advisors(x->x.param(ChatMemory.CONVERSATION_ID,UUID.randomUUID()))
+                .call().content();
     }
 }

@@ -72,4 +72,16 @@ public class ChatController {
         String response = azureAIService.summerize(file);
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/generateQuiz")
+    public ResponseEntity<String> summerizeQuiz(@RequestBody MultipartFile file) throws IOException {
+        String response = azureAIService.generateQuiz(file);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/queryRAG")
+    public ResponseEntity<String> getResponsefromVector(@RequestBody String query) throws IOException {
+        String response = azureAIService.retrieveFromVector(query);
+        return ResponseEntity.ok(response);
+    }
 }
