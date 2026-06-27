@@ -84,4 +84,10 @@ public class ChatController {
         String response = azureAIService.retrieveFromVector(query);
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/fineTune")
+    public ResponseEntity<String> getTunedAnswer(@RequestBody String query) throws IOException {
+        String response = azureAIService.fetchTunedAnswer(query);
+        return ResponseEntity.ok(response);
+    }
 }

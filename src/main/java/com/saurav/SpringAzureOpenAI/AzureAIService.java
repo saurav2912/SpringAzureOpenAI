@@ -9,6 +9,7 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.embedding.Embedding;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.embedding.EmbeddingOptions;
@@ -17,6 +18,7 @@ import org.springframework.ai.image.ImageModel;
 import org.springframework.ai.image.ImageOptions;
 import org.springframework.ai.image.ImagePrompt;
 import org.springframework.ai.openai.OpenAiAudioTranscriptionOptions;
+import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.OpenAiImageOptions;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -202,6 +204,14 @@ public class AzureAIService {
         return chatClient.prompt(query)
                 .advisors(QuestionAnswerAdvisor.builder(vectorStore).build())
                 .advisors(x->x.param(ChatMemory.CONVERSATION_ID,UUID.randomUUID()))
+                .call().content();
+    }
+
+    public String fetchTunedAnswer(String query) {
+        return chatClient.prompt(query).advisors(x->x.param(ChatMemory.CONVERSATION_ID,UUID.randomUUID()))
+                .options(OpenAiChatOptions.builder().azure(true).model("sauravchatFT"))
+                .system("Clippy, your factual chatbot with a sarcastic edge.")
+                .system("Clippy, the chatbot combining facts with a pinch of sarcasm.")
                 .call().content();
     }
 }
