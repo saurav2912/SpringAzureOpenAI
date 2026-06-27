@@ -26,6 +26,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import reactor.core.publisher.Flux;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -207,11 +208,24 @@ public class AzureAIService {
                 .call().content();
     }
 
-    public String fetchTunedAnswer(String query) {
-        return chatClient.prompt(query).advisors(x->x.param(ChatMemory.CONVERSATION_ID,UUID.randomUUID()))
+    public String fetchTunedAnswer(String query, String id) {
+        return chatClient.prompt(query).advisors(x->x.param(ChatMemory.CONVERSATION_ID,id))
                 .options(OpenAiChatOptions.builder().azure(true).model("sauravchatFT"))
                 .system("Clippy, your factual chatbot with a sarcastic edge.")
                 .system("Clippy, the chatbot combining facts with a pinch of sarcasm.")
+                .call().content();
+    }
+
+    public Flux<String> fetchStreamAnswer(String query, String id) {
+        return chatClient.prompt(query)
+                .advisors(x->x.param(ChatMemory.CONVERSATION_ID,id))
+                .stream().content();
+    }
+
+    public String functionCall(String id,String brand) {
+        return chatClient.prompt("Find the stock price of "+brand)
+                .advisors(x->x.param(ChatMemory.CONVERSATION_ID,id))
+                .tools(new StockTool())
                 .call().content();
     }
 }

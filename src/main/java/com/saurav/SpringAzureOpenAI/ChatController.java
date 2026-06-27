@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import reactor.core.publisher.Flux;
 
 import java.io.IOException;
 
@@ -87,7 +88,22 @@ public class ChatController {
 
     @PostMapping("/fineTune")
     public ResponseEntity<String> getTunedAnswer(@RequestBody String query) throws IOException {
-        String response = azureAIService.fetchTunedAnswer(query);
+        String sessionId = (String) session.getAttribute("sessionId");
+        String response = azureAIService.fetchTunedAnswer(query,sessionId);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/stream")
+    public ResponseEntity<Flux<String>> getStreamAnswer(@RequestBody String query) throws IOException {
+        String sessionId = (String) session.getAttribute("sessionId");
+        Flux<String> response = azureAIService.fetchStreamAnswer(query,sessionId);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/tool")
+    public ResponseEntity<String> getInformation(@RequestHeader String brand) throws IOException {
+        String sessionId = (String) session.getAttribute("sessionId");
+        String response = azureAIService.functionCall(sessionId,brand);
         return ResponseEntity.ok(response);
     }
 }
