@@ -9,6 +9,7 @@ public class AI200Controller {
 
     @GetMapping("/ai200")
     public ResponseEntity<String> getAI200() {
-        return ResponseEntity.ok("AI200 is running!");
+
+        return ResponseEntity.ok("AI200 is running Successfully!");
     }
 }
