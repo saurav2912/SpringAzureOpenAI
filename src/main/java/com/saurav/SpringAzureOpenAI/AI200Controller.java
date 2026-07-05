@@ -10,6 +10,17 @@ public class AI200Controller {
     @GetMapping("/ai200")
     public ResponseEntity<String> getAI200() {
 
-        return ResponseEntity.ok("AI200 is running Moderately Slow!!!");
+        return ResponseEntity.ok("AI200 is running Very Slow!!!");
+    }
+
+    @GetMapping("/cpu")
+    public String cpu() {
+        long result = 0;
+
+        for (long i = 0; i < 2_000_000_000L; i++) {
+            result += Math.sqrt(i);
+        }
+
+        return "done " + result;
     }
 }
