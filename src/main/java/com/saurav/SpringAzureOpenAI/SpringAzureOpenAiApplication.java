@@ -3,6 +3,7 @@ package com.saurav.SpringAzureOpenAI;
 import com.azure.core.credential.AzureKeyCredential;
 import com.azure.search.documents.indexes.SearchIndexClient;
 import com.azure.search.documents.indexes.SearchIndexClientBuilder;
+import com.azure.spring.data.cosmos.repository.config.EnableCosmosRepositories;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.image.ImageModel;
 import org.springframework.ai.openai.OpenAiImageModel;
@@ -15,6 +16,7 @@ import org.springframework.context.annotation.Bean;
 import java.util.List;
 
 @SpringBootApplication
+@EnableCosmosRepositories(basePackages = "com.saurav.SpringAzureOpenAI.dao")
 public class SpringAzureOpenAiApplication {
 
 	public static void main(String[] args) {
