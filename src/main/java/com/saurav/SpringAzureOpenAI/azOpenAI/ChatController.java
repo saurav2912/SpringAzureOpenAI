@@ -1,4 +1,4 @@
-package com.saurav.SpringAzureOpenAI;
+package com.saurav.SpringAzureOpenAI.azOpenAI;
 
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;

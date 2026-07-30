@@ -1,9 +1,8 @@
-package com.saurav.SpringAzureOpenAI;
+package com.saurav.SpringAzureOpenAI.cosmos;
 
 import com.azure.cosmos.*;
 import com.azure.cosmos.models.*;
 import com.azure.cosmos.util.CosmosPagedIterable;
-import com.azure.spring.data.cosmos.core.CosmosTemplate;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.saurav.SpringAzureOpenAI.dao.Employee;
 import jakarta.annotation.PostConstruct;
@@ -41,7 +40,7 @@ public class EmployeeService {
                         .getContainer("leases");
     }
 
-    @PostConstruct
+    /*@PostConstruct
     public void init() {
         // Create the lease container if it doesn't exist
         ChangeFeedProcessor changeFeedProcessor = new ChangeFeedProcessorBuilder()
@@ -55,7 +54,7 @@ public class EmployeeService {
                 })
                 .buildChangeFeedProcessor();
         changeFeedProcessor.start().block();
-    }
+    }*/
 
     private void processChanges(List<JsonNode> docs) {
 

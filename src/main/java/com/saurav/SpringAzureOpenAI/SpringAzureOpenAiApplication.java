@@ -4,6 +4,10 @@ import com.azure.core.credential.AzureKeyCredential;
 import com.azure.search.documents.indexes.SearchIndexClient;
 import com.azure.search.documents.indexes.SearchIndexClientBuilder;
 import com.azure.spring.data.cosmos.repository.config.EnableCosmosRepositories;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.image.ImageModel;
 import org.springframework.ai.openai.OpenAiImageModel;
@@ -42,6 +46,12 @@ public class SpringAzureOpenAiApplication {
                 .defaultSimilarityThreshold(0.7)
                 .indexName("smpaz-doc-index")
                 .build();
+    }
+
+    @Bean
+    public ChatClient chatClient(ChatClient.Builder builder) {
+        ChatMemory memory = MessageWindowChatMemory.builder().build();
+        return builder.defaultAdvisors(MessageChatMemoryAdvisor.builder(memory).build()).build();
     }
 
 

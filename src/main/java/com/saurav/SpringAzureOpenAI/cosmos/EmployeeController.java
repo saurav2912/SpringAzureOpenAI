@@ -1,4 +1,4 @@
-package com.saurav.SpringAzureOpenAI;
+package com.saurav.SpringAzureOpenAI.cosmos;
 
 import com.saurav.SpringAzureOpenAI.dao.Employee;
 import org.springframework.web.bind.annotation.*;

@@ -1,4 +1,4 @@
-package com.saurav.SpringAzureOpenAI;
+package com.saurav.SpringAzureOpenAI.cosmos;
 
 import com.saurav.SpringAzureOpenAI.dao.Document;
 import org.springframework.beans.factory.annotation.Autowired;

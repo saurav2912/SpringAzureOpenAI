@@ -1,4 +1,4 @@
-package com.saurav.SpringAzureOpenAI;
+package com.saurav.SpringAzureOpenAI.azOpenAI;
 
 import org.springframework.ai.tool.annotation.Tool;
 

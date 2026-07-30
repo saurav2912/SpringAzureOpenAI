@@ -1,4 +1,4 @@
-package com.saurav.SpringAzureOpenAI;
+package com.saurav.SpringAzureOpenAI.cosmos;
 
 import com.azure.cosmos.*;
 import com.azure.cosmos.models.CosmosQueryRequestOptions;
@@ -9,7 +9,6 @@ import com.azure.cosmos.util.CosmosPagedIterable;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.saurav.SpringAzureOpenAI.dao.Document;
 import com.saurav.SpringAzureOpenAI.dao.DocumentRepository;
-import com.saurav.SpringAzureOpenAI.dao.Employee;
 import jakarta.annotation.PostConstruct;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.embedding.EmbeddingOptions;
@@ -48,7 +47,7 @@ public class CosmosVectorService {
                         .getContainer("leases");
     }
 
-    @PostConstruct
+    /*@PostConstruct
     private void init() {
         // Create the lease container if it doesn't exist
         ChangeFeedProcessor changeFeedProcessor = new ChangeFeedProcessorBuilder()
@@ -62,7 +61,7 @@ public class CosmosVectorService {
                 })
                 .buildChangeFeedProcessor();
         changeFeedProcessor.start().block();
-    }
+    }*/
 
     private static final String SIMILARITY_QUERY = "Select top 5 c.id,c.title,c.content,c.category from c " +
             "order by VectorDistance(c.vector, @vector)";
