@@ -146,7 +146,7 @@ public class EmployeeService {
 
         CosmosPagedIterable<Employee> iterable =
                 container.queryItems(
-                        "SELECT * FROM c where c.department = 'Sales'",
+                        "SELECT * FROM c order by c.department",
                         new CosmosQueryRequestOptions(),
                         Employee.class);
 

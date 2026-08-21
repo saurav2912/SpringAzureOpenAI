@@ -1,29 +1,33 @@
 package com.saurav.SpringAzureOpenAI.AzureAppConfig;
 
-import com.azure.spring.cloud.appconfiguration.config.AppConfigurationRefresh;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class ConfigController {
 
     @Autowired
-    private AppConfigurationRefresh appConfigurationRefresh;
+    private ConfigService configService;
 
-    @Autowired
-    private MyProperties properties;
+    @GetMapping("/get/chat")
+    public String getChatModel() {
+        return "Model: " +configService.getChatModel();
+    }
 
-   /* @Value("${application.version}")
-    private String version;*/
+    @GetMapping("/get/embed")
+    public String getEmbedingModel() {
+        return "Model: " + configService.getEmbedingModel();
+    }
 
-    @GetMapping("/get")
-    public String home() {
-        // Manually poke a refresh check (safe to call even with auto-refresh on)
-        appConfigurationRefresh.refreshConfigurations().block();
-        return "Model: " + properties.getChatModel();
+    @GetMapping("/get/image")
+    public String getImageModel() {
+        return "Model: " + configService.getImageModel();
+    }
+
+    @GetMapping("/get/transcribe")
+    public String getTranscribeModel() {
+        return "Model: " + configService.getTranscribeModel();
     }
 
 

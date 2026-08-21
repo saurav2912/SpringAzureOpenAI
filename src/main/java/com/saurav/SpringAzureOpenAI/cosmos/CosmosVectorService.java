@@ -6,13 +6,13 @@ import com.azure.cosmos.models.FeedResponse;
 import com.azure.cosmos.models.SqlParameter;
 import com.azure.cosmos.models.SqlQuerySpec;
 import com.azure.cosmos.util.CosmosPagedIterable;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.saurav.SpringAzureOpenAI.AzureAppConfig.ConfigService;
 import com.saurav.SpringAzureOpenAI.dao.Document;
 import com.saurav.SpringAzureOpenAI.dao.DocumentRepository;
-import jakarta.annotation.PostConstruct;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.embedding.EmbeddingOptions;
 import org.springframework.ai.embedding.EmbeddingRequest;
+import org.springframework.ai.openai.OpenAiEmbeddingOptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -32,7 +32,6 @@ public class CosmosVectorService {
             CosmosAsyncClient cosmosAsyncClient,
             CosmosClient cosmosClient) {
 
-        //this.cosmosTemplate = cosmosTemplate;
 
         CosmosDatabase database =
                 cosmosClient.getDatabase("AI200CosmosDB");
@@ -70,13 +69,18 @@ public class CosmosVectorService {
     private EmbeddingModel embeddingModel;
 
     @Autowired
+    private ConfigService configService;
+
+    @Autowired
     private DocumentRepository documentRepository;
 
     private float[] getEmbedding(String text) {
         EmbeddingOptions options = EmbeddingOptions.builder()
+                .model(configService.getEmbedingModel())
                 .build();
         EmbeddingRequest request = new EmbeddingRequest(Arrays.asList(text), options);
-        return embeddingModel.call(request).getResults().get(0).getOutput();
+        return embeddingModel.call(request).
+                getResults().get(0).getOutput();
     }
     public void uploadFiletoVector(Document document) {
         float[] vectorArray = getEmbedding(document.getContent());
@@ -95,7 +99,7 @@ public class CosmosVectorService {
 
     public List<Document> getAllDocuments(String query) {
         EmbeddingRequest request = new EmbeddingRequest(Arrays.asList(query),
-                EmbeddingOptions.builder().build());
+                OpenAiEmbeddingOptions.builder().model(configService.getEmbedingModel()).build());
         float[] queryEmbedding = embeddingModel.call(request).getResults().get(0).getOutput();
         List<Float> queryVector = IntStream.range(0, queryEmbedding.length).mapToObj(i -> queryEmbedding[i]).toList();
         return findByVectorSimilarity(queryVector);
