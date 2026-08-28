@@ -28,4 +28,19 @@ public class CosmosVectorController {
     public List<Document> getDocuments(@RequestHeader String query) {
         return cosmosVectorService.getAllDocuments(query);
     }
+
+    @GetMapping("/getDocByFulltext")
+    public List<Document> getDocByFullText(@RequestHeader String query) {
+        return cosmosVectorService.findByFulltextSearch(query);
+    }
+
+    @GetMapping("/getDocByHybrid")
+    public List<Document> getDocByHybridSearch(@RequestHeader String query) {
+        return cosmosVectorService.findByHybridSearch(query);
+    }
+
+    @GetMapping("/fromRAGBot")
+    public String getInfoByRAGBot(@RequestHeader String query) {
+        return cosmosVectorService.processRAGBot(query);
+    }
 }

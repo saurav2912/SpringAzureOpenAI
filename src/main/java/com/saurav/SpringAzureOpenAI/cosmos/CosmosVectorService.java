@@ -1,17 +1,23 @@
 package com.saurav.SpringAzureOpenAI.cosmos;
 
 import com.azure.cosmos.*;
-import com.azure.cosmos.models.CosmosQueryRequestOptions;
-import com.azure.cosmos.models.FeedResponse;
-import com.azure.cosmos.models.SqlParameter;
-import com.azure.cosmos.models.SqlQuerySpec;
+import com.azure.cosmos.models.*;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import com.saurav.SpringAzureOpenAI.AzureAppConfig.ConfigService;
 import com.saurav.SpringAzureOpenAI.dao.Document;
 import com.saurav.SpringAzureOpenAI.dao.DocumentRepository;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.ChatClientRequest;
+import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.memory.ChatMemoryRepository;
+import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.chat.prompt.ChatOptions;
+import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.embedding.EmbeddingOptions;
 import org.springframework.ai.embedding.EmbeddingRequest;
+import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.OpenAiEmbeddingOptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,6 +25,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.IntStream;
 
 @Service
@@ -46,6 +53,9 @@ public class CosmosVectorService {
                         .getContainer("leases");
     }
 
+    @Autowired
+    private ChatClient chatClient;
+
     /*@PostConstruct
     private void init() {
         // Create the lease container if it doesn't exist
@@ -64,9 +74,15 @@ public class CosmosVectorService {
 
     private static final String SIMILARITY_QUERY = "Select top 5 c.id,c.title,c.content,c.category from c " +
             "order by VectorDistance(c.vector, @vector)";
-
+    private static final String FULLTEXT_SEARCH_QUERY="SELECT TOP 5 c.id,c.title,c.content,c.category" +
+            " FROM c  ORDER BY RANK FullTextScore(c.content, @Query)";
+    private static final String HYBRID_SEARCH_QUERY="SELECT TOP 5 c.id,c.title,c.content,c.category" +
+            " FROM c  ORDER BY RANK RRF(VectorDistance(c.vector, @vector),FullTextScore(c.content, @Query)) ";
     @Autowired
     private EmbeddingModel embeddingModel;
+
+    @Autowired
+    private ChatModel chatModel;
 
     @Autowired
     private ConfigService configService;
@@ -121,5 +137,64 @@ public class CosmosVectorService {
         System.out.println("Total RU = " + totalRU);
         iterable.forEach(docs::add);
         return docs;
+    }
+
+    public List<Document> findByFulltextSearch(String query) {
+        List<Document> docs = new ArrayList<>();
+        SqlQuerySpec querySpec = new SqlQuerySpec(FULLTEXT_SEARCH_QUERY)
+                .setParameters(Arrays.asList(new SqlParameter("@Query", query)));
+        Double totalRU = 0.0;
+        CosmosQueryRequestOptions options = new CosmosQueryRequestOptions();
+        options.setQueryMetricsEnabled(true);
+        //options.setPartitionKey(new PartitionKey("/id"));
+        CosmosPagedIterable<Document> iterable =
+                container.queryItems(
+                        querySpec,
+                        options,
+                        Document.class);
+        for (FeedResponse<Document> page : iterable.iterableByPage()) {
+            totalRU += page.getRequestCharge();
+            docs.addAll(page.getResults());
+        }
+        System.out.println("Total RU = " + totalRU);
+        //iterable.forEach(docs::add);
+        return docs;
+    }
+
+    public List<Document> findByHybridSearch(String query) {
+        List<Document> docs = new ArrayList<>();
+        float[] vector = getEmbedding(query);
+        SqlQuerySpec querySpec = new SqlQuerySpec(HYBRID_SEARCH_QUERY)
+                .setParameters(Arrays.asList(new SqlParameter("@Query", query),
+                        new SqlParameter("@vector",vector)));
+        Double totalRU = 0.0;
+        CosmosQueryRequestOptions options = new CosmosQueryRequestOptions();
+        options.setQueryMetricsEnabled(true);
+        options.setMaxDegreeOfParallelism(-1);
+        //options.setPartitionKey(new PartitionKey("/id"));
+        CosmosPagedIterable<Document> iterable =
+                container.queryItems(
+                        querySpec,
+                        options,
+                        Document.class);
+        for (FeedResponse<Document> page : iterable.iterableByPage()) {
+            totalRU += page.getRequestCharge();
+            docs.addAll(page.getResults());
+        }
+        System.out.println("Total RU = " + totalRU);
+        //iterable.forEach(docs::add);
+        return docs;
+    }
+
+    public String processRAGBot(String query) {
+        List<Document> docs = findByHybridSearch(query);
+        ChatOptions options = OpenAiChatOptions.builder()
+                .model(configService.getChatModel())
+                .build();
+
+        String template = "You are an AI expert in Azure Java cloud technologies." +
+                " Please find best response from the below text" + docs.stream().map(x->x.getContent()).toList().toString();
+       String response =chatModel.call(new Prompt(template,options)).getResult().getOutput().getText();
+       return response;
     }
 }

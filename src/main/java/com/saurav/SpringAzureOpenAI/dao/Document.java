@@ -1,10 +1,7 @@
 package com.saurav.SpringAzureOpenAI.dao;
 
 import com.azure.spring.data.cosmos.core.mapping.Container;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.Builder;
+import lombok.*;
 import org.springframework.data.annotation.Id;
 
 import java.util.List;
@@ -14,6 +11,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString
 public class Document {
 
     @Id
