@@ -46,5 +46,6 @@ public class PGController {
             return pgService.getRAGforEmp(query);
         else
             return "Please provide correct item for RAG";
+        
     }
 }
