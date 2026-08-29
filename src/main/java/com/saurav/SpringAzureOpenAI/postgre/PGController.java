@@ -1,6 +1,7 @@
 package com.saurav.SpringAzureOpenAI.postgre;
 
 import com.saurav.SpringAzureOpenAI.dao.PGDocument;
+import com.saurav.SpringAzureOpenAI.dao.PGEngineer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -14,14 +15,25 @@ public class PGController {
     @Autowired
     private PGService pgService;
 
-    @PostMapping("/uploadData")
-    public String uploadDataToPostgreSQL(@RequestBody List<PGDocument> documents) {
-        pgService.uploadDataToPostgreSQL(documents);
+    @PostMapping("/uploadDocument")
+    public String uploadDocToPostgreSQL(@RequestBody List<PGDocument> documents) {
+        pgService.uploadDocumentDataToPostgreSQL(documents);
         return "Data uploaded to PostgreSQL successfully!";
     }
 
-    @PostMapping("/retriveForQuery")
-    public List<PGDocumentDTO> uploadDataToPostgreSQL(@RequestBody String  query) {
-        return pgService.retrieveData(query);
+    @PostMapping("/retriveDocsByQuery")
+    public List<PGDocumentDTO> retrieveDocuments(@RequestBody String  query) {
+        return pgService.retrieveDocument(query);
+    }
+
+    @PostMapping("/uploadEngineer")
+    public String uploadEngToPostgreSQL(@RequestBody List<PGEngineer> engineers) {
+        pgService.uploadEngineerDataToPostgreSQL(engineers);
+        return "Data uploaded to PostgreSQL successfully!";
+    }
+
+    @PostMapping("/retriveEngsByQuery")
+    public List<PGEngineerDTO> retrieveEngineers(@RequestBody String  query) {
+        return pgService.retrieveEngineers(query);
     }
 }
