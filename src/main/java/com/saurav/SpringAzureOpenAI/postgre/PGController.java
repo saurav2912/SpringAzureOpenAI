@@ -38,7 +38,7 @@ public class PGController {
         return pgService.retrieveEngineers(query);
     }
 
-    @PostMapping("/queryRAG")
+    @PostMapping("/queryRAGpgDB")
     public String retrieveEngineers(@RequestHeader String item, @RequestBody String  query) {
         if(item.equalsIgnoreCase("DOC"))
             return pgService.getRAGforDoc(query);
