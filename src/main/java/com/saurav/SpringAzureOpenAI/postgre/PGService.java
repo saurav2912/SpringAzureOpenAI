@@ -6,15 +6,22 @@ import com.saurav.SpringAzureOpenAI.dao.PGDocumentRepository;
 import com.saurav.SpringAzureOpenAI.dao.PGEngineer;
 import com.saurav.SpringAzureOpenAI.dao.PGEngineerRepository;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.ChatClientRequest;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.chat.prompt.ChatOptions;
+import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.embedding.*;
+import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.OpenAiEmbeddingOptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class PGService {
@@ -32,6 +39,9 @@ public class PGService {
     private PGEngineerRepository pgEngineerRepository;
 
     private ChatClient chatClient;
+
+    @Autowired
+    private ChatModel chatModel;
 
     public PGService(ChatClient.Builder chatClientBuilder, ChatMemory chatMemory) {
         this.chatClient = chatClientBuilder.defaultAdvisors
@@ -124,4 +134,28 @@ public class PGService {
         return options;
     }
 
+    private ChatOptions buildChatoptions(){
+        ChatOptions options = OpenAiChatOptions
+                .builder()
+                .model(configService.getChatModel())
+                .build();
+        return options;
+    }
+
+    public String getRAGforDoc(String query) {
+        List<PGDocumentDTO> docs = retrieveDocument(query);
+        String contents = docs.stream().map(PGDocumentDTO::content).collect(Collectors.joining(","));
+        return chatModel.call(new Prompt("Please answer for the query: "+query+" from the below contents :"+contents,
+                buildChatoptions()))
+                .getResult().getOutput().getText();
+
+    }
+
+    public String getRAGforEmp(String query) {
+        List<PGEngineerDTO> docs = retrieveEngineers(query);
+        String contents = docs.stream().map(PGEngineerDTO::profile).collect(Collectors.joining(","));
+        return chatModel.call(new Prompt("Please answer for the query: "+query+" from the below contents :"+contents,
+                        buildChatoptions()))
+                .getResult().getOutput().getText();
+    }
 }
