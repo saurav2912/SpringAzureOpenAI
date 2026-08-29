@@ -87,10 +87,7 @@
         </dependency>
 
         <!-- PostgreSQL -->
-        <dependency>
-            <groupId>com.azure.spring</groupId>
-            <artifactId>spring-cloud-azure-starter-jdbc-postgresql</artifactId>
-        </dependency>
+       
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
