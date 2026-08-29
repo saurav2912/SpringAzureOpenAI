@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface PGEngineerRepository extends JpaRepository<PGEngineer,String> {
 
-    @Query(value = "SELECT id,name,role,profile FROM engineer ORDER BY embedding <=>  CAST(:embedding AS vector) LIMIT 5",
+    @Query(value = "SELECT id,name,role,profile FROM employee ORDER BY embedding <=>  CAST(:embedding AS vector) LIMIT 5",
             nativeQuery = true)
     List<PGEngineerDTO> findByContentContaining(@Param("embedding")float[] queryEmbedding);
 
