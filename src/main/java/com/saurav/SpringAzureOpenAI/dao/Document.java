@@ -6,7 +6,7 @@ import org.springframework.data.annotation.Id;
 
 import java.util.List;
 
-@Container(containerName = "document")
+@Container(containerName = "Document")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
