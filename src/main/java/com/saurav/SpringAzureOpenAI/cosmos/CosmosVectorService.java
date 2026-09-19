@@ -129,7 +129,7 @@ public class CosmosVectorService {
                 document.setVector(IntStream.range(0, vectorArray.length).mapToObj(k -> vectorArray[k]).toList());
                 documentList.add(document);
             }
-            documentRepository.saveAll(documents);
+            documentRepository.saveAll(documentList);
         }
 
     }
