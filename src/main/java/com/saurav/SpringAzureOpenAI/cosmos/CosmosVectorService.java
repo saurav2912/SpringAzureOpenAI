@@ -7,13 +7,10 @@ import com.saurav.SpringAzureOpenAI.AzureAppConfig.ConfigService;
 import com.saurav.SpringAzureOpenAI.dao.Document;
 import com.saurav.SpringAzureOpenAI.dao.DocumentRepository;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.client.ChatClientRequest;
-import org.springframework.ai.chat.memory.ChatMemory;
-import org.springframework.ai.chat.memory.ChatMemoryRepository;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.ai.chat.prompt.PromptTemplate;
+import org.springframework.ai.embedding.Embedding;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.embedding.EmbeddingOptions;
 import org.springframework.ai.embedding.EmbeddingRequest;
@@ -25,7 +22,6 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.IntStream;
 
 @Service
@@ -98,6 +94,14 @@ public class CosmosVectorService {
         return embeddingModel.call(request).
                 getResults().get(0).getOutput();
     }
+    private List<Embedding> getEmbeddingList(List<String> textList) {
+        EmbeddingOptions options = EmbeddingOptions.builder()
+                .model(configService.getEmbedingModel())
+                .build();
+        EmbeddingRequest request = new EmbeddingRequest(textList, options);
+        return embeddingModel.call(request).
+                getResults();
+    }
     public void uploadFiletoVector(Document document) {
         float[] vectorArray = getEmbedding(document.getContent());
         document.setVector(IntStream.range(0, vectorArray.length).mapToObj(i -> vectorArray[i]).toList());
@@ -105,12 +109,29 @@ public class CosmosVectorService {
     }
 
     public void uploadFiletoVector(List<Document> documents) {
-        documents.forEach(x->{
-            float[] vectorArray = getEmbedding(x.getContent());
-            x.setVector(IntStream.range(0, vectorArray.length).mapToObj(i -> vectorArray[i]).toList());
-        });
+        int batch = 200;
+        for (int i = 0; i < documents.size(); i += batch) {
+            List<Document> batchDoc = documents.subList(i,
+                    Math.min(i + batch, documents.size())
+            );
+            List<String> contents = batchDoc.stream()
+                    .map(Document::getContent)
+                    .toList();
+            List<Embedding> embeddingList = getEmbeddingList(contents);
+            List<Document> documentList = new ArrayList<>();
+            for (int j = 0; j < batchDoc.size(); j++) {
+                Document document = new Document();
+                document.setId(batchDoc.get(j).getId());
+                document.setTitle(batchDoc.get(j).getTitle());
+                document.setCategory(batchDoc.get(j).getCategory());
+                document.setContent(batchDoc.get(j).getContent());
+                float[] vectorArray = embeddingList.get(j).getOutput();
+                document.setVector(IntStream.range(0, vectorArray.length).mapToObj(k -> vectorArray[k]).toList());
+                documentList.add(document);
+            }
+            documentRepository.saveAll(documents);
+        }
 
-        documentRepository.saveAll(documents);
     }
 
     public List<Document> getAllDocuments(String query) {
