@@ -101,6 +101,11 @@
             <groupId>redis.clients</groupId>
             <artifactId>jedis</artifactId>
         </dependency>
+        <dependency>
+            <groupId>redis.clients.authentication</groupId>
+            <artifactId>redis-authx-entraid</artifactId>
+            <version>0.2.0</version>
+        </dependency>
     </dependencies>
     <dependencyManagement>
         <dependencies>

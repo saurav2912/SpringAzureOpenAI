@@ -1,17 +1,18 @@
 package com.saurav.SpringAzureOpenAI.Redis;
 
-import com.azure.core.credential.AccessToken;
-import com.azure.core.credential.TokenRequestContext;
-import com.azure.identity.DefaultAzureCredential;
 import com.azure.identity.DefaultAzureCredentialBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import redis.clients.authentication.core.TokenAuthConfig;
+import redis.clients.authentication.entraid.AzureTokenAuthConfigBuilder;
 import redis.clients.jedis.DefaultJedisClientConfig;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.UnifiedJedis;
+import redis.clients.jedis.authentication.AuthXManager;
 import redis.clients.jedis.search.*;
 
 import java.util.Map;
+import java.util.Set;
 
 @Configuration
 public class RedisConfig {
@@ -26,15 +27,17 @@ public class RedisConfig {
                 "ampazai-redis.centralindia.redis.azure.net",
                 10000);
 
-        DefaultAzureCredential credential =
-                new DefaultAzureCredentialBuilder()
+        TokenAuthConfig tokenAuthConfig =
+                AzureTokenAuthConfigBuilder.builder()
+                        .defaultAzureCredential(
+                                new DefaultAzureCredentialBuilder().build())
+                        .scopes(Set.of(REDIS_SCOPE))
+                        .tokenRequestExecTimeoutInMs(20000)
                         .build();
-
-        AccessToken accessToken = getAccessToken(credential);
 
         DefaultJedisClientConfig config =
                 DefaultJedisClientConfig.builder()
-                        .password(accessToken.getToken())
+                        .authXManager(new AuthXManager(tokenAuthConfig))
                         .ssl(true)
                         .build();
         UnifiedJedis jedis = new UnifiedJedis(host, config);
@@ -43,17 +46,6 @@ public class RedisConfig {
         return jedis;
     }
 
-    private AccessToken getAccessToken(
-            DefaultAzureCredential credential) {
-
-        TokenRequestContext requestContext =
-                new TokenRequestContext()
-                        .addScopes(REDIS_SCOPE);
-
-        return credential
-                .getToken(requestContext)
-                .block();
-    }
 
     public void createIndex(UnifiedJedis jedis) {
         IndexDefinition def = new IndexDefinition().setPrefixes(new String[]{"doc:"});
