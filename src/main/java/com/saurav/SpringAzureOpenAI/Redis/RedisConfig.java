@@ -1,5 +1,9 @@
 package com.saurav.SpringAzureOpenAI.Redis;
 
+import com.azure.core.credential.AccessToken;
+import com.azure.core.credential.TokenRequestContext;
+import com.azure.identity.DefaultAzureCredential;
+import com.azure.identity.DefaultAzureCredentialBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import redis.clients.jedis.DefaultJedisClientConfig;
@@ -12,22 +16,43 @@ import java.util.Map;
 @Configuration
 public class RedisConfig {
 
+    private static final String REDIS_SCOPE =
+            "https://redis.azure.com/.default";
+
     @Bean
     public UnifiedJedis jedis() {
 
         HostAndPort host = new HostAndPort(
-                "redis-smp-az.centralindia.redis.azure.net",
+                "ampazai-redis.centralindia.redis.azure.net",
                 10000);
+
+        DefaultAzureCredential credential =
+                new DefaultAzureCredentialBuilder()
+                        .build();
+
+        AccessToken accessToken = getAccessToken(credential);
 
         DefaultJedisClientConfig config =
                 DefaultJedisClientConfig.builder()
-                        .password("emAMMA_fVDNLe2qlWqlyHSi9d6OkJcmnQAZCAACgJ2o=")
+                        .password(accessToken.getToken())
                         .ssl(true)
                         .build();
         UnifiedJedis jedis = new UnifiedJedis(host, config);
-        //jedis.flushAll();
-        //createIndex(jedis);
+        jedis.flushAll();
+        createIndex(jedis);
         return jedis;
+    }
+
+    private AccessToken getAccessToken(
+            DefaultAzureCredential credential) {
+
+        TokenRequestContext requestContext =
+                new TokenRequestContext()
+                        .addScopes(REDIS_SCOPE);
+
+        return credential
+                .getToken(requestContext)
+                .block();
     }
 
     public void createIndex(UnifiedJedis jedis) {
