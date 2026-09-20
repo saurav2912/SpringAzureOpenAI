@@ -41,10 +41,10 @@ public class CosmosVectorService {
                 cosmosClient.getDatabase("AI200CosmosDB");
 
         this.container =
-                database.getContainer("document");
+                database.getContainer("Document");
         this.asyncContainer =
                 cosmosAsyncClient.getDatabase("AI200CosmosDB")
-                        .getContainer("document");
+                        .getContainer("Document");
         this.leaseContainer =
                 cosmosAsyncClient.getDatabase("AI200CosmosDB")
                         .getContainer("leases");
