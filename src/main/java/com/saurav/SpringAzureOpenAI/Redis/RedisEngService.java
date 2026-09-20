@@ -1,13 +1,14 @@
 package com.saurav.SpringAzureOpenAI.Redis;
 
-import com.saurav.SpringAzureOpenAI.dao.PGDocument;
+import com.saurav.SpringAzureOpenAI.AzureAppConfig.ConfigService;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.embedding.Embedding;
 import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.ai.embedding.EmbeddingOptions;
+import org.springframework.ai.embedding.EmbeddingRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.UnifiedJedis;
 import redis.clients.jedis.search.Document;
 import redis.clients.jedis.search.Query;
@@ -30,6 +31,9 @@ public class RedisEngService {
     @Autowired
     private ChatClient chatClient;
 
+    @Autowired
+    private ConfigService configService;
+
     public void insertEngineers(List<RedisEngDTO> engDTOList) {
         int batchSize = 200;
         for (int i = 0; i < engDTOList.size(); i += batchSize) {
@@ -42,11 +46,14 @@ public class RedisEngService {
             List<String> texts = batch.stream()
                     .map(RedisEngDTO::profile)
                     .toList();
-
-            List<float[]> embeddings = embeddingModel.embed(texts);
+            EmbeddingOptions options = EmbeddingOptions.builder()
+                    .model(configService.getEmbedingModel())
+                    .build();
+            EmbeddingRequest request = new EmbeddingRequest(texts, options);
+            List<Embedding> embeddings = embeddingModel.call(request).getResults();
 
             for (int j = 0; j < batch.size(); j++) {
-                byte[] vector = toByteArray(embeddings.get(j));
+                byte[] vector = toByteArray(embeddings.get(j).getOutput());
                 Map<byte[], byte[]> map = new HashMap<>();
 
                 map.put("title".getBytes(StandardCharsets.UTF_8),
