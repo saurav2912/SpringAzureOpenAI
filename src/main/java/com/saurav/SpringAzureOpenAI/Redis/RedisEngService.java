@@ -3,10 +3,14 @@ package com.saurav.SpringAzureOpenAI.Redis;
 import com.saurav.SpringAzureOpenAI.AzureAppConfig.ConfigService;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.chat.prompt.ChatOptions;
+import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.embedding.Embedding;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.embedding.EmbeddingOptions;
 import org.springframework.ai.embedding.EmbeddingRequest;
+import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import redis.clients.jedis.UnifiedJedis;
@@ -33,6 +37,9 @@ public class RedisEngService {
 
     @Autowired
     private ConfigService configService;
+
+    @Autowired
+    private ChatModel chatModel;
 
     public void insertEngineers(List<RedisEngDTO> engDTOList) {
         int batchSize = 200;
@@ -95,9 +102,12 @@ public class RedisEngService {
 
 
     private List<Map<String,Object>> searchDocument(String question) {
-
+        EmbeddingOptions options = EmbeddingOptions.builder()
+                .model(configService.getEmbedingModel())
+                .build();
+        EmbeddingRequest request = new EmbeddingRequest(Arrays.asList(question), options);
         float[] embedding =
-                embeddingModel.embed(question);
+                embeddingModel.call(request).getResults().get(0).getOutput();
 
         byte[] vector = toByteArray(embedding);
 
@@ -144,8 +154,12 @@ public class RedisEngService {
             context.append(doc.get("content")).append("\n");
         }
         String prompt = "Answer the question based on the context below:\n\nContext:\n" + context + "\nQuestion: " + query;
-        String answer = chatClient.prompt(prompt).advisors
-                (x->x.param(ChatMemory.CONVERSATION_ID, UUID.randomUUID())).call().content();
+        ChatOptions options = OpenAiChatOptions.builder()
+                .model(configService.getChatModel())
+                .build();
+        String answer =chatModel.call(new Prompt(prompt,options)).getResult().getOutput().getText();
+        /*String answer = chatClient.prompt(prompt).advisors
+                (x->x.param(ChatMemory.CONVERSATION_ID, UUID.randomUUID())).call().content();*/
 
         return answer;
     }

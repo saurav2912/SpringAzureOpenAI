@@ -41,8 +41,8 @@ public class RedisConfig {
                         .ssl(true)
                         .build();
         UnifiedJedis jedis = new UnifiedJedis(host, config);
-        jedis.flushAll();
-        createIndex(jedis);
+        //jedis.flushAll();
+        //createIndex(jedis);
         return jedis;
     }
 
