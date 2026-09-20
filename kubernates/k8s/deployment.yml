@@ -4,33 +4,44 @@ metadata:
   name: springazureopenai
   labels:
     app: springazureopenai
+
 spec:
   replicas: 1
+
   selector:
     matchLabels:
       app: springazureopenai
+
   template:
     metadata:
       labels:
         app: springazureopenai
+        azure.workload.identity/use: "true"
+
     spec:
+      serviceAccountName: springazureopenai-sa
+
       containers:
         - name: springazureopenai
-          image: acrsauravaz.azurecr.io/springazureopenai:v3.0
+          image: smpazai.azurecr.io/springazureopenai:v1
           imagePullPolicy: Always
+
           ports:
             - containerPort: 8080
+
           env:
-            - name: SPRING_PROFILES_ACTIVE
-              value: "prod"
+
             - name: AZURE_AI_SEARCH_ENDPOINT
               value: "https://aisearchsauravaz.search.windows.net"
+
             - name: AZURE_AI_SEARCH_API_KEY
-              value: "ZQYRcs6CfXw3ihPRbmYHhNTsFlxcDlvf0cCfQja9qxAzSeBhhskp"
+              value: "21SmzLnKA1x6dEJNXVSC1PFGXCDq1XxPqucfq9S9y1eXIejFWGfOJQQJ99CFACHYHv6XJ3w3AAABACOGaAXg"
+
           resources:
             requests:
               cpu: "250m"
               memory: "512Mi"
+
             limits:
               cpu: "500m"
               memory: "1Gi"

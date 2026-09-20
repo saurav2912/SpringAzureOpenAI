@@ -6,6 +6,7 @@ import com.azure.cosmos.util.CosmosPagedIterable;
 import com.saurav.SpringAzureOpenAI.AzureAppConfig.ConfigService;
 import com.saurav.SpringAzureOpenAI.dao.Document;
 import com.saurav.SpringAzureOpenAI.dao.DocumentRepository;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.ChatOptions;
@@ -135,6 +136,7 @@ public class CosmosVectorService {
     }
 
     public List<Document> getAllDocuments(String query) {
+        System.out.println(configService.getEmbedingModel());
         EmbeddingRequest request = new EmbeddingRequest(Arrays.asList(query),
                 OpenAiEmbeddingOptions.builder().model(configService.getEmbedingModel()).build());
         float[] queryEmbedding = embeddingModel.call(request).getResults().get(0).getOutput();
@@ -144,19 +146,24 @@ public class CosmosVectorService {
 
     private List<Document> findByVectorSimilarity(List<Float> queryVector) {
         List<Document> docs = new ArrayList<>();
-        SqlQuerySpec querySpec = new SqlQuerySpec(SIMILARITY_QUERY)
-                .setParameters(Arrays.asList(new SqlParameter("@vector", queryVector)));
-        Double totalRU = 0.0;
-        CosmosPagedIterable<Document> iterable =
-                container.queryItems(
-                        querySpec,
-                        new CosmosQueryRequestOptions(),
-                        Document.class);
-        for (FeedResponse<Document> page : iterable.iterableByPage()) {
-            totalRU += page.getRequestCharge();
+        try {
+            SqlQuerySpec querySpec = new SqlQuerySpec(SIMILARITY_QUERY)
+                    .setParameters(Arrays.asList(new SqlParameter("@vector", queryVector)));
+            Double totalRU = 0.0;
+            CosmosPagedIterable<Document> iterable =
+                    container.queryItems(
+                            querySpec,
+                            new CosmosQueryRequestOptions(),
+                            Document.class);
+            for (FeedResponse<Document> page : iterable.iterableByPage()) {
+                totalRU += page.getRequestCharge();
+            }
+            System.out.println("Total RU = " + totalRU);
+            iterable.forEach(docs::add);
+        } catch (Exception ex){
+            System.out.println(ExceptionUtils.getStackTrace(ex));
         }
-        System.out.println("Total RU = " + totalRU);
-        iterable.forEach(docs::add);
+
         return docs;
     }
 
