@@ -3,20 +3,13 @@ package com.saurav.SpringAzureOpenAI.cosmos;
 import com.azure.cosmos.*;
 import com.azure.cosmos.models.*;
 import com.azure.cosmos.util.CosmosPagedIterable;
-import com.saurav.SpringAzureOpenAI.AzureAppConfig.ConfigService;
+import com.saurav.SpringAzureOpenAI.AI200Service;
 import com.saurav.SpringAzureOpenAI.dao.Document;
 import com.saurav.SpringAzureOpenAI.dao.DocumentRepository;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
-import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.ai.embedding.Embedding;
 import org.springframework.ai.embedding.EmbeddingModel;
-import org.springframework.ai.embedding.EmbeddingOptions;
-import org.springframework.ai.embedding.EmbeddingRequest;
-import org.springframework.ai.openai.OpenAiChatOptions;
-import org.springframework.ai.openai.OpenAiEmbeddingOptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -50,8 +43,11 @@ public class CosmosVectorService {
                         .getContainer("leases");
     }
 
+    /*@Autowired
+    private ChatClient chatClient;*/
+
     @Autowired
-    private ChatClient chatClient;
+    private AI200Service ai200Service;
 
     /*@PostConstruct
     private void init() {
@@ -75,33 +71,24 @@ public class CosmosVectorService {
             " FROM c  ORDER BY RANK FullTextScore(c.content, @Query)";
     private static final String HYBRID_SEARCH_QUERY="SELECT TOP 5 c.id,c.title,c.content,c.category" +
             " FROM c  ORDER BY RANK RRF(VectorDistance(c.vector, @vector),FullTextScore(c.content, @Query)) ";
-    @Autowired
-    private EmbeddingModel embeddingModel;
 
-    @Autowired
-    private ChatModel chatModel;
-
-    @Autowired
-    private ConfigService configService;
 
     @Autowired
     private DocumentRepository documentRepository;
 
-    private float[] getEmbedding(String text) {
-        EmbeddingOptions options = EmbeddingOptions.builder()
-                .model(configService.getEmbedingModel())
-                .build();
-        EmbeddingRequest request = new EmbeddingRequest(Arrays.asList(text), options);
-        return embeddingModel.call(request).
-                getResults().get(0).getOutput();
+    private EmbeddingModel getEmbedingModel() {
+        return ai200Service.getEmbedModel();
     }
-    private List<Embedding> getEmbeddingList(List<String> textList) {
-        EmbeddingOptions options = EmbeddingOptions.builder()
-                .model(configService.getEmbedingModel())
-                .build();
-        EmbeddingRequest request = new EmbeddingRequest(textList, options);
-        return embeddingModel.call(request).
-                getResults();
+
+    private ChatModel getChatModel() {
+        return ai200Service.getChatModel();
+    }
+
+    private float[] getEmbedding(String text) {
+        return getEmbedingModel().embed(text);
+    }
+    private List<float[]> getEmbeddingList(List<String> textList) {
+        return getEmbedingModel().embed(textList);
     }
     public void uploadFiletoVector(Document document) {
         float[] vectorArray = getEmbedding(document.getContent());
@@ -118,7 +105,8 @@ public class CosmosVectorService {
             List<String> contents = batchDoc.stream()
                     .map(Document::getContent)
                     .toList();
-            List<Embedding> embeddingList = getEmbeddingList(contents);
+            //List<Embedding> embeddingList = getEmbeddingList(contents);
+            List<float[]> embeddingList = getEmbeddingList(contents);
             List<Document> documentList = new ArrayList<>();
             for (int j = 0; j < batchDoc.size(); j++) {
                 Document document = new Document();
@@ -126,7 +114,7 @@ public class CosmosVectorService {
                 document.setTitle(batchDoc.get(j).getTitle());
                 document.setCategory(batchDoc.get(j).getCategory());
                 document.setContent(batchDoc.get(j).getContent());
-                float[] vectorArray = embeddingList.get(j).getOutput();
+                float[] vectorArray = embeddingList.get(j);
                 document.setVector(IntStream.range(0, vectorArray.length).mapToObj(k -> vectorArray[k]).toList());
                 documentList.add(document);
             }
@@ -136,10 +124,8 @@ public class CosmosVectorService {
     }
 
     public List<Document> getAllDocuments(String query) {
-        System.out.println(configService.getEmbedingModel());
-        EmbeddingRequest request = new EmbeddingRequest(Arrays.asList(query),
-                OpenAiEmbeddingOptions.builder().model(configService.getEmbedingModel()).build());
-        float[] queryEmbedding = embeddingModel.call(request).getResults().get(0).getOutput();
+
+        float[] queryEmbedding = getEmbedingModel().embed(query);
         List<Float> queryVector = IntStream.range(0, queryEmbedding.length).mapToObj(i -> queryEmbedding[i]).toList();
         return findByVectorSimilarity(queryVector);
     }
@@ -216,13 +202,9 @@ public class CosmosVectorService {
 
     public String processRAGBot(String query) {
         List<Document> docs = findByHybridSearch(query);
-        ChatOptions options = OpenAiChatOptions.builder()
-                .model(configService.getChatModel())
-                .build();
-
         String template = "You are an AI expert in Azure Java cloud technologies." +
                 " Please find best response from the below text" + docs.stream().map(x->x.getContent()).toList().toString();
-       String response =chatModel.call(new Prompt(template,options)).getResult().getOutput().getText();
+       String response =getChatModel().call(new Prompt(template)).getResult().getOutput().getText();
        return response;
     }
 }

@@ -7,6 +7,7 @@ import com.azure.cosmos.models.FeedResponse;
 import com.azure.cosmos.models.SqlParameter;
 import com.azure.cosmos.models.SqlQuerySpec;
 import com.azure.cosmos.util.CosmosPagedIterable;
+import com.saurav.SpringAzureOpenAI.AI200Service;
 import com.saurav.SpringAzureOpenAI.dao.Document;
 import com.saurav.SpringAzureOpenAI.dao.Engineer;
 import com.saurav.SpringAzureOpenAI.dao.EngineerRepository;
@@ -33,10 +34,7 @@ public class EngineerService {
     private EngineerRepository engineerRepository;
 
     @Autowired
-    private EmbeddingModel embeddingModel;
-
-    @Autowired
-    private ChatClient chatClient;
+    private AI200Service ai200Service;
 
     private CosmosContainer container;
 
@@ -53,7 +51,7 @@ public class EngineerService {
             List<String> profiles = batch.stream()
                     .map(EngineerDTO::profile)
                     .toList();
-            List<Embedding> embeddingList = embedTexts(profiles);
+            List<float[]> embeddingList = embedTexts(profiles);
             List<Engineer> engineerList = new ArrayList<>();
             for (int j = 0; j < batch.size(); j++) {
                 Engineer engineer = new Engineer();
@@ -61,21 +59,19 @@ public class EngineerService {
                 engineer.setName(batch.get(j).name());
                 engineer.setRole(batch.get(j).role());
                 engineer.setProfile(batch.get(j).profile());
-                engineer.setEmbedding(embeddingList.get(j).getOutput());
+                engineer.setEmbedding(embeddingList.get(j));
                 engineerList.add(engineer);
             }
             engineerRepository.saveAll(engineerList);
         }
     }
 
-    private List<Embedding> embedTexts(List<String> texts) {
-        EmbeddingRequest request = new EmbeddingRequest(texts, EmbeddingOptions.builder().build());
-        return embeddingModel.call(request).getResults();
+    private List<float[]> embedTexts(List<String> texts) {
+        return ai200Service.getEmbedModel().embed(texts);
     }
 
     private float[] embedText(String text) {
-        EmbeddingRequest request = new EmbeddingRequest(Arrays.asList(text), EmbeddingOptions.builder().build());
-        return embeddingModel.call(request).getResults().get(0).getOutput();
+        return ai200Service.getEmbedModel().embed(text);
     }
 
     public String performRAGQuery(String query) {
@@ -91,9 +87,9 @@ public class EngineerService {
                 "Context:\n" + context + "\n\n" +
                 "Please provide your answer below:\n + The Query is : " + query);
         ChatOptions chatOptions = ChatOptions.builder().build();
-        return chatClient.prompt(prompt.create(chatOptions))
-                .advisors(x->x.param(ChatMemory.CONVERSATION_ID,UUID.randomUUID()))
-                .call().content();
+        return ai200Service.getChatModel()
+                .call(prompt.create()).getResult().getOutput().getText();
+
     }
 
     private List<Engineer> findTopVectorDistance(float[] embedding) {
