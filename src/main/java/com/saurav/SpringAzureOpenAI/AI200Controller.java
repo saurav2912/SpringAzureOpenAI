@@ -4,8 +4,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @RestController
 public class AI200Controller {
+
+    private final List<byte[]> memoryStore = new ArrayList<>();
 
     @GetMapping("/ai200")
     public ResponseEntity<String> getAI200() {
@@ -22,5 +27,18 @@ public class AI200Controller {
         }
 
         return "done " + result;
+    }
+
+
+
+    @GetMapping("/memory")
+    public String memory() {
+
+        for (int i = 0; i < 100; i++) {
+            // Allocate 1 MB each iteration
+            memoryStore.add(new byte[1024 * 1024]);
+        }
+
+        return "Allocated approximately 100 MB";
     }
 }
