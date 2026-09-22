@@ -1,16 +1,9 @@
 package com.saurav.SpringAzureOpenAI.Redis;
 
-import com.saurav.SpringAzureOpenAI.AzureAppConfig.ConfigService;
-import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.memory.ChatMemory;
+import com.saurav.SpringAzureOpenAI.AI200Service;
 import org.springframework.ai.chat.model.ChatModel;
-import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.ai.embedding.Embedding;
 import org.springframework.ai.embedding.EmbeddingModel;
-import org.springframework.ai.embedding.EmbeddingOptions;
-import org.springframework.ai.embedding.EmbeddingRequest;
-import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import redis.clients.jedis.UnifiedJedis;
@@ -30,16 +23,7 @@ public class RedisEngService {
     private UnifiedJedis jedis;
 
     @Autowired
-    private EmbeddingModel embeddingModel;
-
-    @Autowired
-    private ChatClient chatClient;
-
-    @Autowired
-    private ConfigService configService;
-
-    @Autowired
-    private ChatModel chatModel;
+    private AI200Service ai200Service;
 
     public void insertEngineers(List<RedisEngDTO> engDTOList) {
         int batchSize = 200;
@@ -53,14 +37,12 @@ public class RedisEngService {
             List<String> texts = batch.stream()
                     .map(RedisEngDTO::profile)
                     .toList();
-            EmbeddingOptions options = EmbeddingOptions.builder()
-                    .model(configService.getEmbedingModel())
-                    .build();
-            EmbeddingRequest request = new EmbeddingRequest(texts, options);
-            List<Embedding> embeddings = embeddingModel.call(request).getResults();
+
+            EmbeddingModel embeddingModel = ai200Service.getEmbedModel();
+            List<float[]> embeddings = embeddingModel.embed(texts);
 
             for (int j = 0; j < batch.size(); j++) {
-                byte[] vector = toByteArray(embeddings.get(j).getOutput());
+                byte[] vector = toByteArray(embeddings.get(j));
                 Map<byte[], byte[]> map = new HashMap<>();
 
                 map.put("title".getBytes(StandardCharsets.UTF_8),
@@ -102,12 +84,9 @@ public class RedisEngService {
 
 
     private List<Map<String,Object>> searchDocument(String question) {
-        EmbeddingOptions options = EmbeddingOptions.builder()
-                .model(configService.getEmbedingModel())
-                .build();
-        EmbeddingRequest request = new EmbeddingRequest(Arrays.asList(question), options);
+        EmbeddingModel embeddingModel = ai200Service.getEmbedModel();
         float[] embedding =
-                embeddingModel.call(request).getResults().get(0).getOutput();
+                embeddingModel.embed(question);
 
         byte[] vector = toByteArray(embedding);
 
@@ -154,10 +133,8 @@ public class RedisEngService {
             context.append(doc.get("content")).append("\n");
         }
         String prompt = "Answer the question based on the context below:\n\nContext:\n" + context + "\nQuestion: " + query;
-        ChatOptions options = OpenAiChatOptions.builder()
-                .model(configService.getChatModel())
-                .build();
-        String answer =chatModel.call(new Prompt(prompt,options)).getResult().getOutput().getText();
+        ChatModel chatModel = ai200Service.getChatModel();
+        String answer =chatModel.call(new Prompt(prompt)).getResult().getOutput().getText();
         /*String answer = chatClient.prompt(prompt).advisors
                 (x->x.param(ChatMemory.CONVERSATION_ID, UUID.randomUUID())).call().content();*/
 
