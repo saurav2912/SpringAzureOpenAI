@@ -15,7 +15,7 @@ public class AI200Controller {
     @GetMapping("/ai200")
     public ResponseEntity<String> getAI200() {
 
-        return ResponseEntity.ok("AI200 is running in Azure Container Apps with Redis on 22 Sep 8.30 AM!!!");
+        return ResponseEntity.ok("AI200 is running in Azure Container Apps with Redis on 22 Sep 10.30 AM!!!");
     }
 
     @GetMapping("/cpu")
