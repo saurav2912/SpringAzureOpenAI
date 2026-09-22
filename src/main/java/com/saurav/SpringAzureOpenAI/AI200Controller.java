@@ -38,7 +38,6 @@ public class AI200Controller {
             // Allocate 1 MB each iteration
             memoryStore.add(new byte[1024 * 1024]);
         }
-
         return "Allocated approximately 100 MB";
     }
 }
